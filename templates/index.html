@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block header %} Посты блога {% endblock %}
+{% load thumbnail %}
+{% block content %}
+    {% for post in page %}
+        <h3><a class="p-2 text-dark" href="{% url 'profile' username=post.author.username %}">@{{ post.author.get_full_name }}</a>,
+            {% if post.group %}
+                <a class="p-2 text-gray" href="{% url 'group_posts' slug=post.group.slug %}">#{{ post.group.title }}</a>,
+            {% endif %}
+            Дата публикации: {{ post.pub_date|date:"d M Y" }}</h3>
+        {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+            <img class="card-img" src="{{ im.url }}">
+        {% endthumbnail %}
+        <p>{{ post.text|linebreaksbr }}</p>
+        <hr>
+    {% empty %}
+        <h3>Постов нет!</h3>
+    {% endfor %}
+    {% if page.has_other_pages %}
+        {% include "paginator.html" with items=page paginator=paginator %}
+    {% endif %}
+{% endblock %}
