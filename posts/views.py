@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.shortcuts import  get_object_or_404, redirect, render
 
-from .forms import PostForm
+from .forms import CommentForm, PostForm
 from .models import Group, Post, User
 
 
@@ -56,10 +56,12 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
+    form = CommentForm(request.POST or None)
+    comments = post.comments.all()
     return render(
         request,
         'post.html',
-        {'post': post, 'author': post.author})
+        {'post': post, 'author': post.author, 'form': form, 'comments': comments})
 
 
 @login_required
@@ -75,16 +77,29 @@ def new_post(request):
 
 @login_required
 def post_edit(request, username, post_id):
-    post = get_object_or_404(
-        Post, author=User.objects.get(username=username),
-        id=post_id)
+    post = get_object_or_404(Post, author__username=username, id=post_id)
     if request.user != post.author:
         return redirect('post', username=post.author, post_id=post.id)
-    form = PostForm(request.POST or None, files=request.FILES or None, instance=post)
+    form = PostForm(request.POST or None,
+                    files=request.FILES or None,
+                    instance=post)
     if not form.is_valid():
         return render(
             request,
             'new.html',
             {'form': form, 'post': post})
     form.save()
+    return redirect('post', username=post.author, post_id=post.id)
+
+
+@login_required
+def add_comment(request, username, post_id):
+    post = get_object_or_404(Post, author__username=username, id=post_id)
+    form = CommentForm(request.POST or None)
+    if not form.is_valid():
+        return render(request, 'comments.html', {'form': form})
+    comment = form.save(commit=False)
+    comment.author = request.user
+    comment.post = post
+    comment.save()
     return redirect('post', username=post.author, post_id=post.id)
