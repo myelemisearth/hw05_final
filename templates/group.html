@@ -4,15 +4,11 @@
 {% block content %}
     <p>{{ group.description }}</p>
     {% for post in page %}
-        <h3>Автор: <a class="p-2 text-dark" href="{% url 'profile' username=post.author.username %}">@{{ post.author.get_full_name }}</a>,
-            Дата публикации: {{ post.pub_date|date:"d M Y" }}
-        </h3>
-        <p>{{ post.text|linebreaksbr }}</p>
-        <hr>
+        {% include "post_item.html" with post=post %}
     {% empty %}
         <h3>Постов нет!</h3>
     {% endfor %}
     {% if page.has_other_pages %}
-            {% include "paginator.html" with items=page paginator=paginator %}
+        {% include "paginator.html" with items=page paginator=paginator %}
     {% endif %}
 {% endblock %}

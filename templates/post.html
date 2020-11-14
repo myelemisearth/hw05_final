@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% block title %} Запись пользователя {{ post.author.get_full_name }} {% endblock %}
-{% load thumbnail %}
 {% block content %}
 <main role="main" class="container">
     <div class="row">
@@ -14,11 +13,26 @@
                         @{{ post.author.username }}
                     </div>
                 </div>
+                {% if user.is_authenticated and request.user.username != author.username %}
+                    <li class="list-group-item">
+                        {% if following %}
+                            <a class="btn btn-lg btn-light" 
+                                href="{% url 'profile_unfollow' username=author.username %}" role="button"> 
+                                Отписаться 
+                            </a> 
+                        {% else %}
+                            <a class="btn btn-lg btn-primary" 
+                                href="{% url 'profile_follow' username=author.username %}" role="button">
+                                Подписаться 
+                            </a>
+                        {% endif %}
+                    </li>
+                {% endif %}
                 <ul class="list-group list-group-flush">
                     <li class="list-group-item">
                         <div class="h6 text-muted">
-                            Подписчиков: XXX <br />
-                            Подписан: XXX
+                            Подписчиков: {{ post.author.following.count }} <br>
+                            Подписан: {{ post.author.follower.count }}
                         </div>
                     </li>
                     <li class="list-group-item">
@@ -30,36 +44,8 @@
             </div>
         </div>
         <div class="col-md-9">
-            <div class="card mb-3 mt-1 shadow-sm">
-                {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
-                    <img class="card-img" src="{{ im.url }}">
-                {% endthumbnail %}
-                <div class="card-body">
-                    <p class="card-text">
-                        <a href="{% url 'profile' username=post.author.username %}">
-                            <strong class="d-block text-gray-dark">@{{ post.author.username }}</strong>
-                        </a>
-                        {% if post.group %}
-                            <a href="{% url 'group_posts' slug=post.group.slug %}">
-                                <strong class="d-block text-dark">#{{ post.group.title }}</strong>
-                            </a>
-                        {% endif %}
-                        {{ post.text|linebreaksbr }}
-                    </p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        {% if user.username == post.author.username %}
-                            <div class="btn-group ">
-                                <a class="btn btn-sm text-muted"
-                                    href="{% url 'post_edit' username=post.author.username post_id=post.id %}"
-                                    role="button">Редактировать
-                                </a>
-                            </div>
-                        {% endif %}
-                        <small class="text-muted">{{ post.pub_date|date:"D, j M Y, G:i" }}</small>
-                    </div>
-                    {% include "comments.html" with form=form %}
-                </div>
-            </div>
+            {% include "post_item.html" with post=post %}
+            {% include "comments.html" with form=form comments=comments %}
         </div>
     </div>
 </main>
