@@ -1,15 +1,20 @@
+from django.core.cache import cache
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Group, Post, User
+from posts.models import Follow, Group, Post, User
 
 
 class URLTests(TestCase):
     def setUp(self):
+        cache.clear()
         self.user = User.objects.create_user(username='testuser')
         self.client = Client()
         self.client.force_login(self.user)
         self.anonym = Client()
+        self.follow_user = User.objects.create_user(username='test_follower')
+        self.follower_client = Client()
+        self.follower_client.force_login(self.follow_user)
         self.first_group = Group.objects.create(
             title='testgroup', slug='testgroup')
         self.second_group = Group.objects.create(
@@ -23,10 +28,6 @@ class URLTests(TestCase):
             reverse('new_post')
         )
 
-    def test_unfound_pages(self):
-        response = self.client.get('/anypage/')
-        self.assertEqual(response.status_code, 404)
-
     def test_get_urls(self):
         for url in self.urls:
             response_client = self.client.get(url)
@@ -34,12 +35,12 @@ class URLTests(TestCase):
             for response in response_client, response_anonym:
                 with self.subTest(url=url):
                     self.assertEqual(response.status_code, 200)
-    
-    def test_post_newpost(self):
+
+    def test_post_add(self):
         current_posts_count = Post.objects.count()
         response = self.client.post(
-            reverse('new_post'),
-            {'text': self.post_text,'group': self.first_group.id},
+            reverse('new_post'), {
+                'text': self.post_text, 'group': self.first_group.id},
             follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Post.objects.count(), current_posts_count + 1)
@@ -47,15 +48,55 @@ class URLTests(TestCase):
         self.assertEqual(post.author, self.user)
         self.assertEqual(post.group, self.first_group)
         self.assertEqual(post.text, self.post_text)
-            
-    def test_post_editpost(self):
+
+    def test_post_edit(self):
         post = Post.objects.create(
             author=self.user, text=self.post_text, group=self.first_group)
         response = self.client.post(
             reverse('post_edit', kwargs={
-                    'username': self.user.username,'post_id': 1}),
+                'username': self.user.username, 'post_id': 1}),
             {'text': self.post_edit_text, 'group': self.second_group.id},
             follow=True)
         self.assertEqual(response.status_code, 200)
         post.refresh_from_db()
-        self.assertEqual(response.context['post'], post)
+        self.assertEqual(post.author, self.user)
+        self.assertEqual(post.group, self.second_group)
+        self.assertEqual(post.text, self.post_edit_text)
+
+
+    def test_comment_url(self):
+        post = Post.objects.create(
+            author=self.user, text=self.post_text, group=self.first_group)
+        url = reverse('add_comment', kwargs={
+            'username': post.author.username, 'post_id': post.id })
+        response_anon = self.anonym.get(
+            reverse('add_comment', kwargs={
+            'username': post.author.username, 'post_id': post.id }))
+        response_client = self.client.get(
+            reverse('add_comment', kwargs={
+            'username': post.author.username, 'post_id': post.id }))
+        self.assertEqual(response_client.status_code, 200)
+        self.assertRedirects(
+            response_anon, reverse('login')+'?next='+url, 302, 200)
+
+
+    def test_following(self):
+        response = self.follower_client.get(
+            reverse('profile_follow', kwargs={
+            'username': self.user.username}))
+        self.assertRedirects(
+            response, reverse('profile', kwargs={
+            'username': self.user}), 302, 200)
+        relation = Follow.objects.get(author=self.user, user=self.follow_user)
+        self.assertTrue(relation, 'Подписка не создалась')
+    
+    def test_unfollowing(self):
+        relation = Follow.objects.create(
+            author=self.user, user=self.follow_user)
+        response = self.follower_client.get(
+            reverse('profile_unfollow', kwargs={
+            'username': self.user.username}))
+        self.assertRedirects(
+            response, reverse('profile', kwargs={
+            'username': self.user}), 302, 200)
+        self.assertTrue(relation, 'Подписка не удалилась')
