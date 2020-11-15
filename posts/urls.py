@@ -5,7 +5,7 @@ from . import views
 
 urlpatterns = [
     path('',
-         cache_page(1*20)(views.index),
+         cache_page(20)(views.index),
          name='index'),
     path('new/',
          views.new_post,

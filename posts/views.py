@@ -24,8 +24,10 @@ def index(request):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'index.html', {
-        'page': page, 'paginator': paginator})
+    return render(
+        request,
+        'index.html',
+        {'page': page, 'paginator': paginator})
 
 
 def group_posts(request, slug):
@@ -34,8 +36,10 @@ def group_posts(request, slug):
     paginator = Paginator(group_post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'group.html', {
-        'group': group, 'page': page, 'paginator': paginator})
+    return render(
+        request,
+        'group.html',
+        {'group': group, 'page': page, 'paginator': paginator})
 
 
 def profile(request, username):
@@ -51,10 +55,11 @@ def profile(request, username):
     paginator = Paginator(post_list, 5)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number) 
-    return render(request, 'profile.html', {
-        'page': page,'paginator': paginator,
-        'author': author, 'following': following
-        })
+    return render(
+        request, 'profile.html', {
+            'page': page,'paginator': paginator,
+            'author': author, 'following': following}
+        )
 
 
 def post_view(request, username, post_id):
@@ -68,15 +73,13 @@ def post_view(request, username, post_id):
         following = None
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
+    context = {
+        'post': post, 'author': post.author, 'form': form,
+        'comments': comments, 'following': following
+        }
     if not form.is_valid():
-        return render(request, 'post.html', {
-        'post': post, 'author': post.author, 'form': form,
-        'comments': comments, 'following': following
-        })
-    return render(request, 'post.html', {
-        'post': post, 'author': post.author, 'form': form,
-        'comments': comments, 'following': following
-        })
+        return render(request, 'post.html', context)
+    return render(request, 'post.html', context)
 
 
 @login_required
@@ -135,8 +138,8 @@ def profile_follow(request, username):
         following, created = Follow.objects.get_or_create(
             user=user, author=author)
     return redirect('profile', username=author.username)
-        
-    
+
+
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
