@@ -10,7 +10,10 @@
                         {{ post.author.first_name }}
                     </div>
                     <div class="h3 text-muted">
-                        @{{ post.author.username }}
+                        <a class="p-2 text-dark" 
+                            href="{% url 'profile' username=user.username %}">
+                            @{{ post.author.username }}
+                        </a>
                     </div>
                 </div>
                 {% if user.is_authenticated and request.user.username != author.username %}

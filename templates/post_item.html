@@ -10,7 +10,7 @@
             </a>
             {{ post.text|linebreaksbr }}
         </p>
-        {% if post.group %}
+        {% if post.group and not deactivate_group %}
             <a class="card-link muted" href="{% url 'group_posts' slug=post.group.slug %}">
                 <strong class="d-block text-gray-dark">#{{ post.group.title }}</strong>
             </a>
@@ -18,19 +18,19 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="btn-group">
                 {% if post.comments.exists %}
-                    <button type="button" class="btn btn-info">Комментариев: {{ post.comments.count }}</button>
+                    <button type="button" class="btn btn-info">
+                        Комментариев: {{ post.comments.count }}
+                    </button> 
                 {% endif %}
-                {% if page %}
-                    {% if user.is_authenticated %}
-                        <a class="btn btn-sm btn-primary"
-                            href="{% url 'post' username=post.author.username post_id=post.id %}"
-                            role="button">
-                            Добавить комментарий
-                        </a>
-                    {% endif %}
+                {% if page and user.is_authenticated %}
+                    <a class="btn btn-primary btn-sm"
+                        href="{% url 'post' username=post.author.username post_id=post.id %}"
+                        role="button">
+                        Добавить комментарий
+                    </a>
                 {% endif %}
                 {% if user.username == post.author.username %}
-                    <a class="btn btn-sm btn-info"
+                    <a class="btn btn-secondary btn-sm"
                         href="{% url 'post_edit' username=post.author.username post_id=post.id %}"
                         role="button">
                         Редактировать
