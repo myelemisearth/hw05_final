@@ -39,7 +39,7 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    following = Follow.objects.filter(author=author.id, user=request.user.id).exists() or None
+    following = author.following.filter(user=request.user.id).exists() or None
     post_list = author.posts.all()
     paginator = Paginator(post_list, 5)
     page_number = request.GET.get('page')
@@ -53,7 +53,8 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
-    following = Follow.objects.filter(author=post.author.id, user=request.user.id).exists() or None
+    following = post.author.following.filter(
+        user=request.user.id).exists() or None
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
     return render(request, 'post.html', {
@@ -122,7 +123,7 @@ def follow_index(request):
 def profile_follow(request, username):
     author = get_object_or_404(User, username=username)
     if (request.user != author and
-        not Follow.objects.filter(author=author, user=request.user).exists()):
+        not author.following.filter(user=request.user).exists()):
             relation = Follow.objects.create(
                 user=request.user, author=author)
             relation.save()
