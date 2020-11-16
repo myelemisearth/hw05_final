@@ -6,6 +6,8 @@ from posts.models import Follow, Group, Post, User
 
 
 class URLTests(TestCase):
+
+
     def setUp(self):
         cache.clear()
         self.user = User.objects.create_user(username='testuser')
@@ -28,6 +30,7 @@ class URLTests(TestCase):
             reverse('new_post')
         )
 
+
     def test_get_urls(self):
         for url in self.urls:
             response_client = self.client.get(url)
@@ -35,6 +38,7 @@ class URLTests(TestCase):
             for response in response_client, response_anonym:
                 with self.subTest(url=url):
                     self.assertEqual(response.status_code, 200)
+
 
     def test_post_add(self):
         current_posts_count = Post.objects.count()
@@ -48,6 +52,7 @@ class URLTests(TestCase):
         self.assertEqual(post.author, self.user)
         self.assertEqual(post.group, self.first_group)
         self.assertEqual(post.text, self.POST_TEXT)
+
 
     def test_post_edit(self):
         post = Post.objects.create(
@@ -90,7 +95,8 @@ class URLTests(TestCase):
                 'username': self.user}), 302, 200)
         relation = Follow.objects.filter(author=self.user, user=self.follow_user).exists()
         self.assertTrue(relation, 'Подписка не создалась')
-    
+
+
     def test_unfollowing(self):
         relation = Follow.objects.create(
             author=self.user, user=self.follow_user)

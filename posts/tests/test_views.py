@@ -1,11 +1,16 @@
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
+
+from PIL import Image
 
 from posts.models import Follow, Group, Post, User
 
 
 class ViewsTests(TestCase):
+
+
     def setUp(self):
         cache.clear()
         self.user = User.objects.create_user(username='testuser')
@@ -47,12 +52,17 @@ class ViewsTests(TestCase):
 
 
     def test_image_check(self):
-        with open('posts/tests/file.jpg','rb') as img:
-            response = self.client.post(
-                reverse('new_post'), {
-                    'author': self.user.username, 'group': self.group.id,
-                    'text': self.POST_TEXT, 'image': img}, follow=True)
-            self.assertEqual(response.status_code, 200)
+        image = Image.new('L', (20, 20), color=0)
+        uploaded_file = SimpleUploadedFile(
+            'image.jpg',
+            image.tobytes('jpeg', 'L'),
+            'image/jpeg'
+        )
+        response = self.client.post(
+            reverse('new_post'), {
+                'author': self.user.username, 'group': self.group.id,
+                'text': self.POST_TEXT, 'image': uploaded_file}, follow=True)
+        self.assertEqual(response.status_code, 200)
         for url in self.urls:
             response = self.client.get(url)
             with self.subTest(url=url):
@@ -60,16 +70,21 @@ class ViewsTests(TestCase):
 
 
     def test_incorrect_img_upload(self):
+        image = Image.new('L', (20, 20), color=0)
+        uploaded_file = SimpleUploadedFile(
+            'image.jpg',
+            image.tobytes('raw'),
+            'image/jpeg'
+        )
         error = ('Загрузите правильное изображение. '
                  'Файл, который вы загрузили, '
                  'поврежден или не является изображением.')
-        with open('posts/tests/file.txt','rb') as txt:
-            response = self.client.post(
-               reverse('new_post'), {
-                    'author': self.user.username, 'group': self.group.id,
-                    'text': self.POST_TEXT, 'image': txt}, follow=True)
-            self.assertFormError(
-                response, form='form', field='image', errors=error)
+        response = self.client.post(
+            reverse('new_post'), {
+                'author': self.user.username, 'group': self.group.id,
+                'text': self.POST_TEXT, 'image': uploaded_file}, follow=True)
+        self.assertFormError(
+            response, form='form', field='image', errors=error)
 
 
     def test_check_follow_posts(self):
@@ -89,7 +104,7 @@ class ViewsTests(TestCase):
         post = Post.objects.create(
             author=self.user, text=self.POST_TEXT, group=self.group)
         response = self.client.get(reverse('index'))
-        self.assertFalse(response.context)
+        self.assertEqual(response.content, get_cache.content)
         cache.clear()
         response = self.client.get(reverse('index'))
         self.assertEqual(response.context['page'][0], post)
