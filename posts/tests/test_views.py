@@ -19,7 +19,7 @@ class ViewsTests(TestCase):
             username='test_unfollower')
         self.unfollower_client = Client()
         self.unfollower_client.force_login(self.unfollow_user)
-        self.post_text = 'Это тестовый пост.'
+        self.POST_TEXT = 'Это тестовый пост.'
         self.group = Group.objects.create(
             title='testgroup', slug='testgroup')
         self.urls = (
@@ -33,14 +33,14 @@ class ViewsTests(TestCase):
 
     def test_get_newpost(self):
         post = Post.objects.create(
-            author=self.user, text=self.post_text, group=self.group)
+            author=self.user, text=self.POST_TEXT, group=self.group)
         for url in self.urls:
             response = self.client.get(url)
             with self.subTest(url=url):
                 self.assertTrue('post' in response.context
                                 or 'page' in response.context)
                 if 'page' in response.context:
-                   checking_post = response.context['page'][0]
+                    checking_post = response.context['page'][0]
                 elif 'post' in response.context:
                     checking_post = response.context['post']
                 self.assertEqual(checking_post, post)
@@ -51,7 +51,7 @@ class ViewsTests(TestCase):
             response = self.client.post(
                 reverse('new_post'), {
                     'author': self.user.username, 'group': self.group.id,
-                    'text': self.post_text, 'image': img}, follow=True)
+                    'text': self.POST_TEXT, 'image': img}, follow=True)
             self.assertEqual(response.status_code, 200)
         for url in self.urls:
             response = self.client.get(url)
@@ -67,14 +67,14 @@ class ViewsTests(TestCase):
             response = self.client.post(
                reverse('new_post'), {
                     'author': self.user.username, 'group': self.group.id,
-                    'text': self.post_text, 'image': txt}, follow=True)
+                    'text': self.POST_TEXT, 'image': txt}, follow=True)
             self.assertFormError(
                 response, form='form', field='image', errors=error)
 
 
     def test_check_follow_posts(self):
         post = Post.objects.create(
-            author=self.user, text=self.post_text, group=self.group)
+            author=self.user, text=self.POST_TEXT, group=self.group)
         relation = Follow.objects.create(
             author=self.user, user=self.follow_user)
         url = reverse('follow_index')
@@ -87,7 +87,7 @@ class ViewsTests(TestCase):
     def test_cache_page(self):
         get_cache = self.client.get(reverse('index'))
         post = Post.objects.create(
-            author=self.user, text=self.post_text, group=self.group)
+            author=self.user, text=self.POST_TEXT, group=self.group)
         response = self.client.get(reverse('index'))
         self.assertFalse(response.context)
         cache.clear()
