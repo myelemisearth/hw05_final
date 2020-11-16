@@ -1,6 +1,19 @@
 from django.contrib import admin
 
-from .models import Post, Group
+from .models import Comment, Follow, Group, Post
+
+
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('author', 'post', 'created')
+
+
+class FollowAdmin(admin.ModelAdmin):
+    list_display = ('author', 'user')
+
+
+class GroupAdmin(admin.ModelAdmin):
+    prepopulated_fields = {"slug": ("title",)}
+    list_display = ('title', 'slug', 'description')
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -10,10 +23,7 @@ class PostAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
 
 
-class GroupAdmin(admin.ModelAdmin):
-    prepopulated_fields = {"slug": ("title",)}
-    list_display = ('title', 'slug', 'description')
-
-
-admin.site.register(Post, PostAdmin)
+admin.site.register(Comment, CommentAdmin)
+admin.site.register(Follow, FollowAdmin)
 admin.site.register(Group, GroupAdmin)
+admin.site.register(Post, PostAdmin)
