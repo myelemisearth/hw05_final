@@ -10,7 +10,6 @@ from posts.models import Follow, Group, Post, User
 
 class ViewsTests(TestCase):
 
-
     def setUp(self):
         cache.clear()
         self.user = User.objects.create_user(username='testuser')
@@ -35,7 +34,6 @@ class ViewsTests(TestCase):
                     'post_id': 1})
         )
 
-
     def test_get_newpost(self):
         post = Post.objects.create(
             author=self.user, text=self.POST_TEXT, group=self.group)
@@ -50,7 +48,6 @@ class ViewsTests(TestCase):
                     checking_post = response.context['post']
                 self.assertEqual(checking_post, post)
 
-
     def test_image_check(self):
         image = Image.new('L', (20, 20), color=0)
         uploaded_file = SimpleUploadedFile(
@@ -60,20 +57,22 @@ class ViewsTests(TestCase):
         )
         response = self.client.post(
             reverse('new_post'), {
-                'author': self.user.username, 'group': self.group.id,
-                'text': self.POST_TEXT, 'image': uploaded_file}, follow=True)
+                'author': self.user.username,
+                'group': self.group.id,
+                'text': self.POST_TEXT,
+                'image': uploaded_file},
+            follow=True)
         self.assertEqual(response.status_code, 200)
         for url in self.urls:
             response = self.client.get(url)
             with self.subTest(url=url):
                 self.assertContains(response, 'img', status_code=200)
 
-
     def test_incorrect_img_upload(self):
-        image = Image.new('L', (20, 20), color=0)
+        fake_image = b'a'
         uploaded_file = SimpleUploadedFile(
             'image.jpg',
-            image.tobytes('raw'),
+            fake_image,
             'image/jpeg'
         )
         error = ('Загрузите правильное изображение. '
@@ -81,11 +80,13 @@ class ViewsTests(TestCase):
                  'поврежден или не является изображением.')
         response = self.client.post(
             reverse('new_post'), {
-                'author': self.user.username, 'group': self.group.id,
-                'text': self.POST_TEXT, 'image': uploaded_file}, follow=True)
+                'author': self.user.username,
+                'group': self.group.id,
+                'text': self.POST_TEXT,
+                'image': uploaded_file},
+            follow=True)
         self.assertFormError(
             response, form='form', field='image', errors=error)
-
 
     def test_check_follow_posts(self):
         post = Post.objects.create(
@@ -97,7 +98,6 @@ class ViewsTests(TestCase):
         response_unfollower = self.unfollower_client.get(url)
         self.assertEqual(response_follower.context['page'][0], post)
         self.assertTrue(len(response_unfollower.context['page']) == 0)
-
 
     def test_cache_page(self):
         get_cache = self.client.get(reverse('index'))

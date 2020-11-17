@@ -7,7 +7,6 @@ from posts.models import Follow, Group, Post, User
 
 class URLTests(TestCase):
 
-
     def setUp(self):
         cache.clear()
         self.user = User.objects.create_user(username='testuser')
@@ -30,15 +29,13 @@ class URLTests(TestCase):
             reverse('new_post')
         )
 
-
     def test_get_urls(self):
         for url in self.urls:
             response_client = self.client.get(url)
             response_anonym = self.anonym.get(url, follow=True)
             for response in response_client, response_anonym:
-                with self.subTest(url=url):
+                with self.subTest(msg='Fail in url:', url=url):
                     self.assertEqual(response.status_code, 200)
-
 
     def test_post_add(self):
         current_posts_count = Post.objects.count()
@@ -52,7 +49,6 @@ class URLTests(TestCase):
         self.assertEqual(post.author, self.user)
         self.assertEqual(post.group, self.first_group)
         self.assertEqual(post.text, self.POST_TEXT)
-
 
     def test_post_edit(self):
         post = Post.objects.create(
@@ -68,7 +64,6 @@ class URLTests(TestCase):
         self.assertEqual(post.group, self.second_group)
         self.assertEqual(post.text, self.POST_EDIT_TEXT)
 
-
     def test_comment_url(self):
         post = Post.objects.create(
             author=self.user, text=self.POST_TEXT, group=self.first_group)
@@ -80,11 +75,12 @@ class URLTests(TestCase):
         response_client = self.client.get(
             reverse('add_comment', kwargs={
             'username': post.author.username, 'post_id': post.id }))
-        with self.subTest():
-            self.assertEqual(response_client.status_code, 200)
+        with self.subTest(msg='Anon response', response=response_anon):
             self.assertRedirects(
                 response_anon, reverse('login')+'?next='+url, 302, 200)
 
+        with self.subTest(msg='Client response', response=response_client):
+            self.assertEqual(response_client.status_code, 200)
 
     def test_following(self):
         response = self.follower_client.get(
@@ -95,7 +91,6 @@ class URLTests(TestCase):
                 'username': self.user}), 302, 200)
         relation = Follow.objects.filter(author=self.user, user=self.follow_user).exists()
         self.assertTrue(relation, 'Подписка не создалась')
-
 
     def test_unfollowing(self):
         relation = Follow.objects.create(
