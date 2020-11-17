@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "posts/base.html" %}
 {% block title %} Запись пользователя {{ post.author.get_full_name }} {% endblock %}
 {% block content %}
 <main role="main" class="container">
@@ -47,8 +47,8 @@
             </div>
         </div>
         <div class="col-md-9">
-            {% include "post_item.html" with post=post %}
-            {% include "comments.html" with form=form comments=comments %}
+            {% include "posts/includes/post_item.html" with post=post %}
+            {% include "posts/includes/comments.html" with form=form comments=comments %}
         </div>
     </div>
 </main>
