@@ -8,12 +8,12 @@ from .models import Follow, Group, Post, User
 
 
 def page_not_found(request, exception):
-    return render(request, 'misc/404.html', {
+    return render(request, 'posts/misc/404.html', {
         'path': request.path}, status=404)
 
 
 def server_error(request):
-    return render(request, 'misc/500.html', status=500)
+    return render(request, 'posts/misc/500.html', status=500)
 
 
 @cache_page(20, key_prefix='index_page')
@@ -22,7 +22,7 @@ def index(request):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'index.html', {
+    return render(request, 'posts/index.html', {
         'page': page,
         'paginator': paginator})
 
@@ -33,7 +33,7 @@ def group_posts(request, slug):
     paginator = Paginator(group_post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'group.html', {
+    return render(request, 'posts/group.html', {
         'group': group,
         'page': page,
         'paginator': paginator})
@@ -41,25 +41,25 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    following = author.following.filter(user=request.user.id).exists() or None
+    following = author.following.filter(user=request.user).exists()
     post_list = author.posts.all()
     paginator = Paginator(post_list, 5)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number) 
-    return render(request, 'profile.html', {
-            'page': page,
-            'paginator': paginator,
-            'author': author,
-            'following': following})
+    return render(request, 'posts/profile.html', {
+        'page': page,
+        'paginator': paginator,
+        'author': author,
+        'following': following})
 
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
     following = post.author.following.filter(
-        user=request.user.id).exists() or None
+        user=request.user).exists()
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
-    return render(request, 'post.html', {
+    return render(request, 'posts/post.html', {
         'post': post,
         'author': post.author,
         'form': form,
@@ -71,7 +71,7 @@ def post_view(request, username, post_id):
 def new_post(request):
     form = PostForm(request.POST or None, files=request.FILES or None)
     if not form.is_valid():
-        return render(request, 'new.html',
+        return render(request, 'posts/new.html',
         {'form': form})
     post = form.save(commit=False)
     post.author = request.user
@@ -88,7 +88,7 @@ def post_edit(request, username, post_id):
                     files=request.FILES or None,
                     instance=post)
     if not form.is_valid():
-        return render(request, 'new.html', {
+        return render(request, 'posts/new.html', {
             'form': form,
             'post': post})
     form.save()
@@ -100,7 +100,7 @@ def add_comment(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
     form = CommentForm(request.POST or None)
     if not form.is_valid():
-        return render(request, 'comments.html', {
+        return render(request, 'posts/includes/comments.html', {
             'form': form,
             'post': post})
     comment = form.save(commit=False)
@@ -116,7 +116,7 @@ def follow_index(request):
     paginator = Paginator(post_list, 10)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    return render(request, 'follow.html', {
+    return render(request, 'posts/follow.html', {
         'page': page,
         'paginator': paginator})
 
@@ -127,14 +127,13 @@ def profile_follow(request, username):
     if (request.user != author and
         not author.following.filter(user=request.user).exists()):
             relation = Follow.objects.create(
-                user=request.user, author=author)
-            relation.save()
+                author=author, user=request.user)
     return redirect('profile', username=author.username)
 
 
 @login_required
 def profile_unfollow(request, username):
-    relation = get_object_or_404(
-        Follow, author__username=username, user__username=request.user)
+    author = get_object_or_404(User, username=username)
+    relation = author.following.filter(user=request.user)
     relation.delete()
     return redirect('profile', username=username)
