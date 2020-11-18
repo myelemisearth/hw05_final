@@ -41,7 +41,8 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    following = author.following.filter(user=request.user).exists()
+    following = (request.user.is_authenticated and
+        author.following.filter(user=request.user).exists())
     post_list = author.posts.all()
     paginator = Paginator(post_list, 5)
     page_number = request.GET.get('page')
@@ -55,8 +56,8 @@ def profile(request, username):
 
 def post_view(request, username, post_id):
     post = get_object_or_404(Post, author__username=username, id=post_id)
-    following = post.author.following.filter(
-        user=request.user).exists()
+    following = (request.user.is_authenticated and
+        post.author.following.filter(user=request.user).exists())
     comments = post.comments.all()
     form = CommentForm(request.POST or None)
     return render(request, 'posts/post.html', {
